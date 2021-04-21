@@ -5,22 +5,21 @@
 template <class T> class CircularDoubleLinkedList {
 private:
 	int size;
-	DoubleLinkedNode<T> * begin, * end;
+	DoubleLinkedNode<T> * begin;
 	
 	void addFirstNode(T*);
 	void addNode(T*);
-	bool delNodeInZeroOrOneElemList();
 
 public:
 	CircularDoubleLinkedList();
 	
 	void setBegin(DoubleLinkedNode<T>*);
-	void setEnd(DoubleLinkedNode<T>*);
 
 	DoubleLinkedNode<T>* getBegin();
 	DoubleLinkedNode<T>* getEnd();
 	int getSize();
 
+	void addBeforeNode(T*, DoubleLinkedNode<T>*);
 	void addBack(T*);
 	void addFront(T*);
 
@@ -35,17 +34,12 @@ public:
 template <class T>
 CircularDoubleLinkedList<T>::CircularDoubleLinkedList() {
 	size = 0;
-	begin = end = nullptr;
+	begin = nullptr;
 }
 
 template <class T>
 void CircularDoubleLinkedList<T>::setBegin(DoubleLinkedNode<T>* newBegin) {
 	begin = newBegin;
-}
-
-template <class T>
-void CircularDoubleLinkedList<T>::setEnd(DoubleLinkedNode<T>* newEnd) {
-	end = newEnd;
 }
 
 template <class T>
@@ -55,7 +49,7 @@ DoubleLinkedNode<T>* CircularDoubleLinkedList<T>::getBegin() {
 
 template <class T>
 DoubleLinkedNode<T>* CircularDoubleLinkedList<T>::getEnd() {
-	return end;
+	return begin->previous;
 }
 
 template <class T>
@@ -64,17 +58,26 @@ int CircularDoubleLinkedList<T>::getSize() {
 }
 
 template <class T>
+void CircularDoubleLinkedList<T>::addBeforeNode(T* data, DoubleLinkedNode<T>* node) {
+	DoubleLinkedNode<T>* newNode;
+	newNode = new DoubleLinkedNode<T>(data, node->previous, node);
+	node->previous->next = newNode;
+	node->previous = newNode;
+	size++;
+}
+
+template <class T>
 void CircularDoubleLinkedList<T>::addFirstNode(T* data) {
 	begin = new DoubleLinkedNode<T>(data, nullptr, nullptr);
 	begin->next = begin->previous = begin;
-	end = begin;
 }
 
 template <class T>
 void CircularDoubleLinkedList<T>::addNode(T* data) {
 	DoubleLinkedNode<T>* newNode;
-	newNode = new DoubleLinkedNode<T>(data, end, begin);
-	begin->previous = end->next = newNode;
+	newNode = new DoubleLinkedNode<T>(data, begin->previous, begin);
+	begin->previous->next = newNode;
+	begin->previous = newNode;
 }
 
 template <class T>
@@ -84,7 +87,6 @@ void CircularDoubleLinkedList<T>::addBack(T* data) {
 	}
 	else {
 		addNode(data);
-		end = end->next;
 	}
 	size++;
 }
@@ -101,32 +103,21 @@ void CircularDoubleLinkedList<T>::addFront(T* data) {
 	size++;
 }
 
-template <class T>
-bool CircularDoubleLinkedList<T>::delNodeInZeroOrOneElemList() {
-	if (!begin) return true;
-	else if (begin == end) {
-		delete begin;
-		begin = end = nullptr;
-		return true;
-	}
-	return false;
-}
 
 template <class T>
 T* CircularDoubleLinkedList<T>::delBack() {
 	T* returnValue;
 	if (!begin) return nullptr;
-	else if (begin == end) {
+	else if (size==1) {
 		returnValue = begin->value;
 		delete begin;
-		begin = end = nullptr;
+		begin = nullptr;
 	}
 	else {
-		DoubleLinkedNode<T>* delNode = end;
+		DoubleLinkedNode<T>* delNode = begin->previous;
 		returnValue = delNode->value;
-		end = end->previous;
-		end->next = begin;
-		begin->previous = end;
+		delNode->previous->next = begin;
+		begin->previous = delNode->previous;
 		delete delNode;
 	}
 	size--;
@@ -137,17 +128,17 @@ template <class T>
 T* CircularDoubleLinkedList<T>::delFront() {
 	T* returnValue;
 	if (!begin) return nullptr;
-	else if (begin == end) {
+	else if (size == 1) {
 		returnValue = begin->value;
 		delete begin;
-		begin = end = nullptr;
+		begin = nullptr;
 	}
 	else {
 		DoubleLinkedNode<T>* delNode = begin;
 		returnValue = delNode->value;
 		begin = begin->next;
-		end->next = begin;
-		begin->previous = end;
+		delNode->previous->next = begin;
+		begin->previous = delNode->previous;
 		delete delNode;
 	}
 	size--;
@@ -157,7 +148,7 @@ T* CircularDoubleLinkedList<T>::delFront() {
 template <class T>
 T* CircularDoubleLinkedList<T>::delNode(DoubleLinkedNode<T>* nodeToDelete) {
 	if (!begin) return nullptr;
-	else if (begin == end) {
+	else if (size==1) {
 		if (begin == nodeToDelete) {
 			return delFront();
 		}
@@ -167,7 +158,7 @@ T* CircularDoubleLinkedList<T>::delNode(DoubleLinkedNode<T>* nodeToDelete) {
 			return delFront();
 		}
 		DoubleLinkedNode<T>* nodeToCheck = begin->next;
-		while (nodeToCheck->next != begin) {
+		while (nodeToCheck != begin) {
 			if (nodeToCheck == nodeToDelete) {
 				DoubleLinkedNode<T>* previousNode, * nextNode;
 				T* returnValue = nodeToCheck->value;
@@ -181,29 +172,26 @@ T* CircularDoubleLinkedList<T>::delNode(DoubleLinkedNode<T>* nodeToDelete) {
 			}
 			nodeToCheck = nodeToCheck->next;
 		}
-		if (nodeToDelete == end) {
-			return delBack();
-		}
 	}
+	return nullptr;
 }
 
 template <class T>
 CircularDoubleLinkedList<T>::~CircularDoubleLinkedList() {
 	if (begin) {
-		if (begin == end) {
+		
+		if (size == 1) {
 			delete begin;
-			begin = end = nullptr;
+			begin = nullptr;
 		}
 		else {
-			DoubleLinkedNode<T>* nextToDel;
-			while (begin->next != end) {
-				nextToDel = begin->next;
-				delete begin;
-				begin = nextToDel;
+			begin->previous->next = nullptr;
+			while (begin->next != nullptr) {
+				begin = begin->next;
+				delete begin->previous;
 			}
 			delete begin;
-			delete end;
-			begin = end = nullptr;
+			begin = nullptr;
 		}
 	}
 }

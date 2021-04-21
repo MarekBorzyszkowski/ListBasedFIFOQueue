@@ -7,12 +7,12 @@
 #define END 1
 
 void printIntQueue(ListBasedFIFOQueue<int>& queue) {
-	if (queue.getFirstQueueElem()) {
+	if (!queue.isQueueEmptyFun()) {
 		DoubleLinkedNode<int> *tmpNode = queue.getFirstQueueElem(),
 			*endNode = queue.getLastQueueElem();
 		while (tmpNode != endNode) {
 			printf("%d ", *tmpNode->value);
-			tmpNode = tmpNode->next;
+			tmpNode = tmpNode->previous;
 		}
 		printf("%d \n", *endNode->value);
 	}
@@ -62,7 +62,7 @@ void printIntList(ListBasedFIFOQueue<int>& queue, bool direction) {
 int main() {
 	ListBasedFIFOQueue<int>  queue;
 	char* action = new char[MAX_ACTION_LENGTH];
-	int input, *output;
+	int input, *output = new int(0);
 	while (scanf("%s", action) != EOF) {
 		if (!strcmp(action, "PUSH")) {
 			scanf("%d", &input);
@@ -114,6 +114,7 @@ int main() {
 		}
 
 	}
-	//ADD_BEG, ADD_END, DEL_BEG, DEL_END, PRINT_FORWARD, PRINT_BACKWARD
+	delete action;
+	delete output;
 	return 0;
 }

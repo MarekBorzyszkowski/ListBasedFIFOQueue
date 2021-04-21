@@ -139,9 +139,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CircularDoubleLinkedList.cpp" />
-    <ClCompile Include="DoubleLinkedNode.cpp" />
-    <ClCompile Include="ListBasedFIFOQueue.cpp" />
     <ClCompile Include="Projekt_3_List_based_FIFO_queue.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -10,6 +10,8 @@ private:
 public:
 	ListBasedFIFOQueue();
 
+	bool isQueueEmptyFun();
+
 	int getListSize();
 	int getQueueSize();
 	DoubleLinkedNode<T>* getFirstQueueElem();
@@ -39,6 +41,10 @@ ListBasedFIFOQueue<T>::ListBasedFIFOQueue() {
 }
 
 template <class T>
+bool ListBasedFIFOQueue<T>::isQueueEmptyFun() {
+	return isQueueEmpty;
+}
+template <class T>
 int ListBasedFIFOQueue<T>::getListSize() {
 	return list.getSize();
 }
@@ -50,7 +56,7 @@ int ListBasedFIFOQueue<T>::getQueueSize() {
 		int queueLenght = 1;
 		while (tmpNode != lastQueueElem) {
 			queueLenght++;
-			tmpNode = tmpNode->next;
+			tmpNode = tmpNode->previous;
 		}
 		return queueLenght;
 	}
@@ -93,26 +99,31 @@ template <class T>
 void ListBasedFIFOQueue<T>::pushBack(T* data) {
 	if (isQueueEmpty) {
 		if (list.getSize()) {
-			firstQueueElem = lastQueueElem = list.getBegin();
+			if (!firstQueueElem) {
+				firstQueueElem = lastQueueElem = list.getEnd();
+			}
 			firstQueueElem->value = data;
-			isQueueEmpty = 0;
 		}
 		else {
 			list.addFront(data);
 			firstQueueElem = lastQueueElem = list.getBegin();
-			isQueueEmpty = 0;
 		}
+		isQueueEmpty = 0;
 	}
 	else {
 		if (list.getSize() == getQueueSize()) {
-			list.setBegin(firstQueueElem);
-			list.setEnd(lastQueueElem);
-			list.addBack(data);
-			lastQueueElem = list.getEnd();
+			if (lastQueueElem == list.getBegin()) {
+				list.addFront(data);
+				lastQueueElem = list.getBegin();
+			}
+			else {
+				list.addBeforeNode(data, lastQueueElem);
+				lastQueueElem = lastQueueElem->previous;
+			}
 		}
 		else {
-			lastQueueElem->next->value = data;
-			lastQueueElem = lastQueueElem->next;
+			lastQueueElem = lastQueueElem->previous;
+			lastQueueElem->value = data;
 		}
 	}
 }
@@ -125,12 +136,12 @@ T* ListBasedFIFOQueue<T>::popFirst() {
 	else {
 		DoubleLinkedNode<T>* resoult = firstQueueElem;
 		if (firstQueueElem == lastQueueElem) {
-			firstQueueElem = lastQueueElem = nullptr;
+			//firstQueueElem = lastQueueElem = nullptr;
 			isQueueEmpty = 1;
 			return resoult->value;
 		}
 		else {
-			firstQueueElem = firstQueueElem->next;
+			firstQueueElem = firstQueueElem->previous;
 			return resoult->value;
 		}
 	}
@@ -138,12 +149,21 @@ T* ListBasedFIFOQueue<T>::popFirst() {
 
 template <class T>
 T* ListBasedFIFOQueue<T>::delListBegin() {
-	if (firstQueueElem && firstQueueElem == list.getBegin()) {
-		if (firstQueueElem == lastQueueElem) {
-			popFirst();
+	if (!isQueueEmpty) {
+		if (firstQueueElem == list.getBegin()) {
+			if (firstQueueElem == lastQueueElem) {
+				popFirst();
+			}
+			else {
+				firstQueueElem = firstQueueElem->previous;
+			}
 		}
-		else {
-			firstQueueElem = firstQueueElem->next;
+		else if (lastQueueElem == list.getBegin()) {
+			lastQueueElem = lastQueueElem->next;
+		}
+		if (list.getSize() < 2) {
+			firstQueueElem = lastQueueElem = nullptr;
+			isQueueEmpty = 1;
 		}
 	}
 	return list.delFront();
@@ -151,13 +171,21 @@ T* ListBasedFIFOQueue<T>::delListBegin() {
 
 template <class T>
 T* ListBasedFIFOQueue<T>::delListEnd() {
-	if (lastQueueElem && lastQueueElem == list.getEnd()) {
-		if (firstQueueElem == lastQueueElem) {
+	if (!isQueueEmpty) {
+		if (firstQueueElem == list.getEnd()) {
+			if (firstQueueElem == lastQueueElem) {
+				popFirst();
+			}
+			else {
+				firstQueueElem = firstQueueElem->previous;
+			}
+		}
+		else if (lastQueueElem == list.getEnd()) {
+			lastQueueElem = lastQueueElem->next;
+		}
+		if (list.getSize() < 2) {
 			firstQueueElem = lastQueueElem = nullptr;
 			isQueueEmpty = 1;
-		}
-		else {
-			lastQueueElem = lastQueueElem->previous;
 		}
 	}
 	return list.delBack();
@@ -169,17 +197,20 @@ void ListBasedFIFOQueue<T>::garbadeSoft() {
 		if (list.getSize()) {
 			DoubleLinkedNode<T>* tmpNode = list.getBegin();
 			while (tmpNode != list.getEnd()) {
+				delete tmpNode->value;
 				tmpNode->value = nullptr;
 				tmpNode = tmpNode->next;
 			}
+			delete list.getEnd()->value;
 			list.getEnd()->value = nullptr;
 		}
 	}
 	else {
-		DoubleLinkedNode<T>* tmpNode = lastQueueElem->next;
+		DoubleLinkedNode<T>* tmpNode = lastQueueElem->previous;
 		while (tmpNode != firstQueueElem) {
+			delete tmpNode->value;
 			tmpNode->value = nullptr;
-			tmpNode = tmpNode->next;
+			tmpNode = tmpNode->previous;
 		}
 	}
 }
@@ -187,15 +218,13 @@ void ListBasedFIFOQueue<T>::garbadeSoft() {
 template <class T>
 void ListBasedFIFOQueue<T>::garbageHard() {
 	if (isQueueEmpty) {
-		if (list.getSize()) {
-			while (list.getSize()) {
-				list.delFront();
-			}
+		while (list.getSize()) {
+			list.delFront();
 		}
 	}
 	else {
-		while (lastQueueElem->next != firstQueueElem) {
-			list.delNode(lastQueueElem->next);
+		while (lastQueueElem->previous != firstQueueElem) {
+			list.delNode(lastQueueElem->previous);
 		}
 	}
 }
