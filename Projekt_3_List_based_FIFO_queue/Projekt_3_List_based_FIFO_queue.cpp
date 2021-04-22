@@ -114,7 +114,7 @@ int main() {
 		}
 
 	}
-	delete action;
+	delete[] action;
 	delete output;
 	return 0;
 }
